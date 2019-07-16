@@ -1,2 +1,7 @@
 /node_modules/
 /ffmpeg*.js
+npm-debug.log
+WebIDLGrammar.pkl
+parser.out
+avcodec.glue.*
+*.o

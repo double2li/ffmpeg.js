@@ -1,0 +1,393 @@
+diff --git a/configure b/configure
+index d29e00ad8..0359a587c 100755
+--- a/configure
++++ b/configure
+@@ -777,6 +777,5 @@ process "$@"
+ print_webm_license ${BUILD_PFX}vpx_config.c "/*" " */"
+ cat <<EOF >> ${BUILD_PFX}vpx_config.c
+ #include "vpx/vpx_codec.h"
+-static const char* const cfg = "$CONFIGURE_ARGS";
+-const char *vpx_codec_build_config(void) {return cfg;}
++const char *vpx_codec_build_config(void) {return "";}
+ EOF
+diff --git a/vp8/encoder/denoising.c b/vp8/encoder/denoising.c
+index e54d1e9f4..af0fc174e 100644
+--- a/vp8/encoder/denoising.c
++++ b/vp8/encoder/denoising.c
+@@ -17,6 +17,8 @@
+ #include "vpx_mem/vpx_mem.h"
+ #include "vp8_rtcd.h"
+ 
++#if CONFIG_TEMPORAL_DENOISING
++
+ static const unsigned int NOISE_MOTION_THRESHOLD = 25 * 25;
+ /* SSE_DIFF_THRESHOLD is selected as ~95% confidence assuming
+  * var(noise) ~= 100.
+@@ -723,3 +725,5 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser, MACROBLOCK *x,
+     }
+   }
+ }
++
++#endif // CONFIG_TEMPORAL_DENOISING
+diff --git a/vp8/encoder/encodeframe.c b/vp8/encoder/encodeframe.c
+index 2b3d9564c..a1cc19833 100644
+--- a/vp8/encoder/encodeframe.c
++++ b/vp8/encoder/encodeframe.c
+@@ -680,11 +680,15 @@ void vp8_encode_frame(VP8_COMP *cpi) {
+   totalrate = 0;
+ 
+   if (cpi->compressor_speed == 2) {
++#if defined(__EMSCRIPTEN__)
++    cpi->Speed = cpi->oxcf.cpu_used + 1;
++#else
+     if (cpi->oxcf.cpu_used < 0) {
+       cpi->Speed = -(cpi->oxcf.cpu_used);
+     } else {
+       vp8_auto_select_speed(cpi);
+     }
++#endif
+   }
+ 
+   /* Functions setup for all frame types so we can use MC in AltRef */
+@@ -744,9 +748,10 @@ void vp8_encode_frame(VP8_COMP *cpi) {
+ #endif
+ 
+   {
++#if !defined(__EMSCRIPTEN__)
+     struct vpx_usec_timer emr_timer;
+     vpx_usec_timer_start(&emr_timer);
+-
++#endif
+ #if CONFIG_MULTITHREAD
+     if (vpx_atomic_load_acquire(&cpi->b_multi_threaded)) {
+       int i;
+@@ -882,8 +887,10 @@ void vp8_encode_frame(VP8_COMP *cpi) {
+     }
+ #endif
+ 
++#if !defined(__EMSCRIPTEN__)
+     vpx_usec_timer_mark(&emr_timer);
+     cpi->time_encode_mb_row += vpx_usec_timer_elapsed(&emr_timer);
++#endif
+   }
+ 
+   // Work out the segment probabilities if segmentation is enabled
+diff --git a/vp8/encoder/onyx_if.c b/vp8/encoder/onyx_if.c
+index 4fd157492..0272ec9cb 100644
+--- a/vp8/encoder/onyx_if.c
++++ b/vp8/encoder/onyx_if.c
+@@ -3149,11 +3149,13 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
+   if (cm->no_lpf) {
+     cm->filter_level = 0;
+   } else {
++#if !defined(__EMSCRIPTEN__)
+     struct vpx_usec_timer timer;
+ 
+     vpx_clear_system_state();
+ 
+     vpx_usec_timer_start(&timer);
++#endif
+     if (cpi->sf.auto_filter == 0) {
+ #if CONFIG_TEMPORAL_DENOISING
+       if (cpi->oxcf.noise_sensitivity && cm->frame_type != KEY_FRAME) {
+@@ -3188,8 +3190,10 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
+       vp8cx_set_alt_lf_level(cpi, cm->filter_level);
+     }
+ 
++#if !defined(__EMSCRIPTEN__)
+     vpx_usec_timer_mark(&timer);
+     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
++#endif
+   }
+ 
+ #if CONFIG_MULTITHREAD
+@@ -4783,11 +4787,12 @@ static void Pass2Encode(VP8_COMP *cpi, size_t *size, unsigned char *dest,
+ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags,
+                           YV12_BUFFER_CONFIG *sd, int64_t time_stamp,
+                           int64_t end_time) {
+-  struct vpx_usec_timer timer;
+   int res = 0;
++#if !defined(__EMSCRIPTEN__)
++  struct vpx_usec_timer timer;
+ 
+   vpx_usec_timer_start(&timer);
+-
++#endif
+   /* Reinit the lookahead buffer if the frame size changes */
+   if (sd->y_width != cpi->oxcf.Width || sd->y_height != cpi->oxcf.Height) {
+     assert(cpi->oxcf.lag_in_frames < 2);
+@@ -4799,9 +4804,10 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags,
+                          cpi->active_map_enabled ? cpi->active_map : NULL)) {
+     res = -1;
+   }
++#if !defined(__EMSCRIPTEN__)
+   vpx_usec_timer_mark(&timer);
+   cpi->time_receive_data += vpx_usec_timer_elapsed(&timer);
+-
++#endif
+   return res;
+ }
+ 
+@@ -5075,6 +5081,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
+       break;
+   }
+ 
++#if !defined(__EMSCRIPTEN__)
+   if (cpi->compressor_speed == 2) {
+     unsigned int duration, duration2;
+     vpx_usec_timer_mark(&tsctimer);
+@@ -5102,6 +5109,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
+       }
+     }
+   }
++#endif
+ 
+   if (cm->refresh_entropy_probs == 0) {
+     memcpy(&cm->fc, &cm->lfc, sizeof(cm->fc));
+@@ -5130,9 +5138,10 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
+   /* Save layer specific state */
+   if (cpi->oxcf.number_of_layers > 1) save_layer_context(cpi);
+ 
++#if !defined(__EMSCRIPTEN__)
+   vpx_usec_timer_mark(&cmptimer);
+   cpi->time_compress_data += vpx_usec_timer_elapsed(&cmptimer);
+-
++#endif
+   if (cpi->b_calculate_psnr && cpi->pass != 1 && cm->show_frame) {
+     generate_psnr_packet(cpi);
+   }
+diff --git a/vp8/encoder/rdopt.c b/vp8/encoder/rdopt.c
+index 79a858e43..b36713517 100644
+--- a/vp8/encoder/rdopt.c
++++ b/vp8/encoder/rdopt.c
+@@ -258,6 +258,7 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, MACROBLOCK *x, int Qvalue) {
+   }
+ }
+ 
++#if !defined(__EMSCRIPTEN__)
+ void vp8_auto_select_speed(VP8_COMP *cpi) {
+   int milliseconds_for_compress = (int)(1000000 / cpi->framerate);
+ 
+@@ -315,6 +316,7 @@ void vp8_auto_select_speed(VP8_COMP *cpi) {
+     cpi->avg_encode_time = 0;
+   }
+ }
++#endif
+ 
+ int vp8_block_error_c(short *coeff, short *dqcoeff) {
+   int i;
+diff --git a/vp8/vp8_cx_iface.c b/vp8/vp8_cx_iface.c
+index eb04f67fa..087a02044 100644
+--- a/vp8/vp8_cx_iface.c
++++ b/vp8/vp8_cx_iface.c
+@@ -160,7 +160,12 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
+   RANGE_CHECK_HI(cfg, rc_min_quantizer, cfg->rc_max_quantizer);
+   RANGE_CHECK_HI(cfg, g_threads, 64);
+ #if CONFIG_REALTIME_ONLY
++# if !defined(__EMSCRIPTEN__)
++// FIXME: ...
++// [libvpx @ 0x8f44a80] Failed to initialize encoder: Invalid parameter
++// [libvpx @ 0x8f44a80]   Additional information: g_lag_in_frames out of range [..0]
+   RANGE_CHECK_HI(cfg, g_lag_in_frames, 0);
++# endif
+ #elif CONFIG_MULTI_RES_ENCODING
+   if (ctx->base.enc.total_encoders > 1) RANGE_CHECK_HI(cfg, g_lag_in_frames, 0);
+ #else
+@@ -407,7 +412,12 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
+ 
+   oxcf->screen_content_mode = vp8_cfg.screen_content_mode;
+ 
+-  /*
++#if defined(__EMSCRIPTEN__)
++// https://www.webmproject.org/docs/encoder-parameters/#real-time-cbr-encoding-and-streaming
++  // oxcf->encode_breakout = 960;
++  if (oxcf->Width > 999) oxcf->encode_breakout = 2e3;
++#endif
++  /** /
+       printf("Current VP8 Settings: \n");
+       printf("target_bandwidth: %d\n", oxcf->target_bandwidth);
+       printf("noise_sensitivity: %d\n", oxcf->noise_sensitivity);
+@@ -439,7 +449,7 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
+       printf("Version: %d\n", oxcf->Version);
+       printf("multi_threaded: %d\n",   oxcf->multi_threaded);
+       printf("encode_breakout: %d\n", oxcf->encode_breakout);
+-  */
++  /**/
+   return VPX_CODEC_OK;
+ }
+ 
+@@ -851,9 +861,11 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
+     return res;
+   }
+ 
++#if !defined(__EMSCRIPTEN__)
+   if (img) res = validate_img(ctx, img);
+ 
+   if (!res) res = validate_config(ctx, &ctx->cfg, &ctx->vp8_cfg, 1);
++#endif
+ 
+   if (!ctx->pts_offset_initialized) {
+     ctx->pts_offset = pts_val;
+@@ -1265,13 +1277,23 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] = {
+         60, /* rc_resize_down_thresold */
+         30, /* rc_resize_up_thresold */
+ 
++#if defined(__EMSCRIPTEN__)
++        VPX_CBR,     /* rc_end_usage */
++#else
+         VPX_VBR,     /* rc_end_usage */
++#endif
+         { NULL, 0 }, /* rc_twopass_stats_in */
+         { NULL, 0 }, /* rc_firstpass_mb_stats_in */
+         256,         /* rc_target_bandwidth */
++#if defined(__EMSCRIPTEN__)
++        19,          /* rc_min_quantizer */
++        39,          /* rc_max_quantizer */
++        80,          /* rc_undershoot_pct */
++#else
+         4,           /* rc_min_quantizer */
+         63,          /* rc_max_quantizer */
+         100,         /* rc_undershoot_pct */
++#endif
+         100,         /* rc_overshoot_pct */
+ 
+         6000, /* rc_max_buffer_size */
+@@ -1286,7 +1308,11 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] = {
+         /* keyframing settings (kf) */
+         VPX_KF_AUTO, /* g_kfmode*/
+         0,           /* kf_min_dist */
++#if defined(__EMSCRIPTEN__)
++        999999,      /* kf_max_dist */
++#else
+         128,         /* kf_max_dist */
++#endif
+ 
+         VPX_SS_DEFAULT_LAYERS, /* ss_number_layers */
+         { 0 },
+diff --git a/vpx/internal/vpx_codec_internal.h b/vpx/internal/vpx_codec_internal.h
+index 9eed85e5d..ed19ef38d 100644
+--- a/vpx/internal/vpx_codec_internal.h
++++ b/vpx/internal/vpx_codec_internal.h
+@@ -441,5 +441,8 @@ void vpx_internal_error(struct vpx_internal_error_info *info,
+ #ifdef __cplusplus
+ }  // extern "C"
+ #endif
+-
++#if defined(__EMSCRIPTEN__)
++# undef setjmp
++# define setjmp(...) (0)
++#endif
+ #endif  // VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
+diff --git a/vpx/src/vpx_codec.c b/vpx/src/vpx_codec.c
+index 10331aa21..347d87e43 100644
+--- a/vpx/src/vpx_codec.c
++++ b/vpx/src/vpx_codec.c
+@@ -114,6 +114,10 @@ vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t *ctx, int ctrl_id, ...) {
+ 
+ void vpx_internal_error(struct vpx_internal_error_info *info,
+                         vpx_codec_err_t error, const char *fmt, ...) {
++#if defined(__EMSCRIPTEN__)
++  printf("vpx_internal_error: %s\n", fmt);
++  abort();
++#else
+   va_list ap;
+ 
+   info->error_code = error;
+@@ -130,4 +134,5 @@ void vpx_internal_error(struct vpx_internal_error_info *info,
+   }
+ 
+   if (info->setjmp) longjmp(info->jmp, info->error_code);
++#endif
+ }
+diff --git a/vpx/src/vpx_encoder.c b/vpx/src/vpx_encoder.c
+index c227ee902..059b8ade8 100644
+--- a/vpx/src/vpx_encoder.c
++++ b/vpx/src/vpx_encoder.c
+@@ -22,7 +22,7 @@
+ 
+ #define SAVE_STATUS(ctx, var) ((ctx) ? ((ctx)->err = (var)) : (var))
+ 
+-static vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
++static inline vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
+   return (vpx_codec_alg_priv_t *)ctx->priv;
+ }
+ 
+@@ -244,6 +244,9 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
+ 
+ const vpx_codec_cx_pkt_t *vpx_codec_get_cx_data(vpx_codec_ctx_t *ctx,
+                                                 vpx_codec_iter_t *iter) {
++#if defined(__EMSCRIPTEN__)
++  return ctx->iface->enc.get_cx_data(get_alg_priv(ctx), iter);
++#else
+   const vpx_codec_cx_pkt_t *pkt = NULL;
+ 
+   if (ctx) {
+@@ -286,6 +289,7 @@ const vpx_codec_cx_pkt_t *vpx_codec_get_cx_data(vpx_codec_ctx_t *ctx,
+   }
+ 
+   return pkt;
++#endif
+ }
+ 
+ vpx_codec_err_t vpx_codec_set_cx_data_buf(vpx_codec_ctx_t *ctx,
+diff --git a/vpx_mem/vpx_mem.c b/vpx_mem/vpx_mem.c
+index 18abf1158..865b571dd 100644
+--- a/vpx_mem/vpx_mem.c
++++ b/vpx_mem/vpx_mem.c
+@@ -25,6 +25,8 @@
+ #endif
+ #endif
+ 
++#if !defined(__EMSCRIPTEN__)
++
+ // Returns 0 in case of overflow of nmemb * size.
+ static int check_size_argument_overflow(uint64_t nmemb, uint64_t size) {
+   const uint64_t total_size = nmemb * size;
+@@ -84,3 +86,5 @@ void vpx_free(void *memblk) {
+     free(addr);
+   }
+ }
++
++#endif // !defined(__EMSCRIPTEN__)
+diff --git a/vpx_mem/vpx_mem.h b/vpx_mem/vpx_mem.h
+index 7689a05e6..d18c09fdd 100644
+--- a/vpx_mem/vpx_mem.h
++++ b/vpx_mem/vpx_mem.h
+@@ -49,4 +49,11 @@ static INLINE void *vpx_memset16(void *dest, int val, size_t length) {
+ }
+ #endif
+ 
++#if defined(__EMSCRIPTEN__)
++# define vpx_memalign(a,b) malloc(b)
++# define vpx_malloc malloc
++# define vpx_free free
++# define vpx_calloc calloc
++#endif
++
+ #endif  // VPX_VPX_MEM_VPX_MEM_H_
+diff --git a/vpx_ports/vpx_timer.h b/vpx_ports/vpx_timer.h
+index 4934d5296..e92a7aa69 100644
+--- a/vpx_ports/vpx_timer.h
++++ b/vpx_ports/vpx_timer.h
+@@ -15,7 +15,20 @@
+ 
+ #include "vpx/vpx_integer.h"
+ 
+-#if CONFIG_OS_SUPPORT
++#if defined(__EMSCRIPTEN__)
++# ifndef timersub
++#  define timersub(a, b, result)
++# endif
++
++struct vpx_usec_timer {
++  void *dummy;
++};
++
++# define vpx_usec_timer_start(...) ((void)0)
++# define vpx_usec_timer_mark(...) ((void)0)
++# define vpx_usec_timer_elapsed(...) (2e6)
++
++#elif CONFIG_OS_SUPPORT
+ 
+ #if defined(_WIN32)
+ /*

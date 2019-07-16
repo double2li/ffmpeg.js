@@ -1,0 +1,57 @@
+--- configure~	2019-07-01 17:55:53.890986600 +0200
++++ configure	2019-07-01 18:10:29.240211900 +0200
+@@ -2487,33 +2487,7 @@ esac
+ # symlink; some systems play weird games with the mod time of symlinks
+ # (eg FreeBSD returns the mod time of the symlink's containing
+ # directory).
+-if (
+-   set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
+-   if test "$*" = "X"; then
+-      # -L didn't work.
+-      set X `ls -t "$srcdir/configure" conftest.file`
+-   fi
+-   rm -f conftest.file
+-   if test "$*" != "X $srcdir/configure conftest.file" \
+-      && test "$*" != "X conftest.file $srcdir/configure"; then
+-
+-      # If neither matched, then we have a broken ls.  This can happen
+-      # if, for instance, CONFIG_SHELL is bash and it inherits a
+-      # broken ls alias from the environment.  This has actually
+-      # happened.  Such a system could not be considered "sane".
+-      as_fn_error $? "ls -t appears to fail.  Make sure there is not a broken
+-alias in your environment" "$LINENO" 5
+-   fi
+-
+-   test "$2" = conftest.file
+-   )
+-then
+-   # Ok.
+-   :
+-else
+-   as_fn_error $? "newly created file is older than distributed files!
+-Check your system clock" "$LINENO" 5
+-fi
++
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+ $as_echo "yes" >&6; }
+ test "$program_prefix" != NONE &&
+@@ -2868,18 +2842,7 @@ $SHELL "$ac_aux_dir/config.sub" sun4 >/d
+ 
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking build system type" >&5
+ $as_echo_n "checking build system type... " >&6; }
+-if ${ac_cv_build+:} false; then :
+-  $as_echo_n "(cached) " >&6
+-else
+-  ac_build_alias=$build_alias
+-test "x$ac_build_alias" = x &&
+-  ac_build_alias=`$SHELL "$ac_aux_dir/config.guess"`
+-test "x$ac_build_alias" = x &&
+-  as_fn_error $? "cannot guess build type; you must specify one" "$LINENO" 5
+-ac_cv_build=`$SHELL "$ac_aux_dir/config.sub" $ac_build_alias` ||
+-  as_fn_error $? "$SHELL $ac_aux_dir/config.sub $ac_build_alias failed" "$LINENO" 5
+-
+-fi
++ac_cv_build=x86-none-linux
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_build" >&5
+ $as_echo "$ac_cv_build" >&6; }
+ case $ac_cv_build in

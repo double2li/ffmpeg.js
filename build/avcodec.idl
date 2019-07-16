@@ -1,0 +1,9 @@
+interface avcodec {
+    void avcodec();
+    long init ();
+    long transcode ([Const] Uint8Array data, long size);
+    [Const] Uint8Array getBuffer ();
+    [Const] long getBufferLength ();
+    [Const] DOMString status ();
+    void kill ();
+};
