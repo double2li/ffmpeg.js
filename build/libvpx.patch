@@ -1,8 +1,8 @@
 diff --git a/configure b/configure
-index d29e00ad8..0359a587c 100755
+index 181e27b7c..21099049f 100755
 --- a/configure
 +++ b/configure
-@@ -777,6 +777,5 @@ process "$@"
+@@ -781,6 +781,5 @@ process "$@"
  print_webm_license ${BUILD_PFX}vpx_config.c "/*" " */"
  cat <<EOF >> ${BUILD_PFX}vpx_config.c
  #include "vpx/vpx_codec.h"
@@ -73,10 +73,10 @@ index 2b3d9564c..a1cc19833 100644
  
    // Work out the segment probabilities if segmentation is enabled
 diff --git a/vp8/encoder/onyx_if.c b/vp8/encoder/onyx_if.c
-index 4fd157492..0272ec9cb 100644
+index 29c8cc66c..3754ee5bf 100644
 --- a/vp8/encoder/onyx_if.c
 +++ b/vp8/encoder/onyx_if.c
-@@ -3149,11 +3149,13 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
+@@ -3141,11 +3141,13 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
    if (cm->no_lpf) {
      cm->filter_level = 0;
    } else {
@@ -90,7 +90,7 @@ index 4fd157492..0272ec9cb 100644
      if (cpi->sf.auto_filter == 0) {
  #if CONFIG_TEMPORAL_DENOISING
        if (cpi->oxcf.noise_sensitivity && cm->frame_type != KEY_FRAME) {
-@@ -3188,8 +3190,10 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
+@@ -3180,8 +3182,10 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
        vp8cx_set_alt_lf_level(cpi, cm->filter_level);
      }
  
@@ -101,7 +101,7 @@ index 4fd157492..0272ec9cb 100644
    }
  
  #if CONFIG_MULTITHREAD
-@@ -4783,11 +4787,12 @@ static void Pass2Encode(VP8_COMP *cpi, size_t *size, unsigned char *dest,
+@@ -4777,11 +4781,12 @@ static void Pass2Encode(VP8_COMP *cpi, size_t *size, unsigned char *dest,
  int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags,
                            YV12_BUFFER_CONFIG *sd, int64_t time_stamp,
                            int64_t end_time) {
@@ -116,7 +116,7 @@ index 4fd157492..0272ec9cb 100644
    /* Reinit the lookahead buffer if the frame size changes */
    if (sd->y_width != cpi->oxcf.Width || sd->y_height != cpi->oxcf.Height) {
      assert(cpi->oxcf.lag_in_frames < 2);
-@@ -4799,9 +4804,10 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags,
+@@ -4793,9 +4798,10 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags,
                           cpi->active_map_enabled ? cpi->active_map : NULL)) {
      res = -1;
    }
@@ -128,7 +128,7 @@ index 4fd157492..0272ec9cb 100644
    return res;
  }
  
-@@ -5075,6 +5081,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
+@@ -5069,6 +5075,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
        break;
    }
  
@@ -136,7 +136,7 @@ index 4fd157492..0272ec9cb 100644
    if (cpi->compressor_speed == 2) {
      unsigned int duration, duration2;
      vpx_usec_timer_mark(&tsctimer);
-@@ -5102,6 +5109,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
+@@ -5096,6 +5103,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
        }
      }
    }
@@ -144,7 +144,7 @@ index 4fd157492..0272ec9cb 100644
  
    if (cm->refresh_entropy_probs == 0) {
      memcpy(&cm->fc, &cm->lfc, sizeof(cm->fc));
-@@ -5130,9 +5138,10 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
+@@ -5124,9 +5132,10 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
    /* Save layer specific state */
    if (cpi->oxcf.number_of_layers > 1) save_layer_context(cpi);
  
@@ -177,7 +177,7 @@ index 79a858e43..b36713517 100644
  int vp8_block_error_c(short *coeff, short *dqcoeff) {
    int i;
 diff --git a/vp8/vp8_cx_iface.c b/vp8/vp8_cx_iface.c
-index eb04f67fa..087a02044 100644
+index 07ea52c05..717db45da 100644
 --- a/vp8/vp8_cx_iface.c
 +++ b/vp8/vp8_cx_iface.c
 @@ -160,7 +160,12 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
@@ -300,7 +300,7 @@ index 10331aa21..347d87e43 100644
 +#endif
  }
 diff --git a/vpx/src/vpx_encoder.c b/vpx/src/vpx_encoder.c
-index c227ee902..059b8ade8 100644
+index 6272502ce..f885c6b8d 100644
 --- a/vpx/src/vpx_encoder.c
 +++ b/vpx/src/vpx_encoder.c
 @@ -22,7 +22,7 @@
