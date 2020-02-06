@@ -2,8 +2,6 @@
 # You need emsdk environment installed and activated, see:
 # <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
 
-EMVER=1.38.32
-EMPATH=/c/emsdk/emscripten/$(EMVER)
 TARGET=build/avcodec.js
 POST_JS=build/avcodec.glue.js
 PRE_JS=build/pre.js
@@ -22,6 +20,7 @@ SHARED_DEPS = \
 
 CC=emcc
 CXX=em++
+UGLIFYJS=uglifyjs -c pure_getters=true,reduce_vars=false,sequences=false,passes=5 -b indent_level=2,width=120
 INCLUDES=-I build/ffmpeg
 DEFINES=-DUNICODE -DNDEBUG #-DNO_AVLOG
 CFLAGS=$(DEFINES) -O3 --llvm-lto 3 -flto -ffast-math -funroll-loops \
@@ -40,7 +39,7 @@ LDFLAGS=$(LIBS) \
 	-s TOTAL_MEMORY=268435456 -s NO_FILESYSTEM=1 -s NO_DYNAMIC_EXECUTION=1 -s ABORTING_MALLOC=0 \
 	-s DISABLE_EXCEPTION_CATCHING=1 -s AGGRESSIVE_VARIABLE_ELIMINATION=1 -s ASSERTIONS=0 \
 	-s INVOKE_RUN=0 -s NO_EXIT_RUNTIME=1 -s TEXTDECODER=2 -s WASM=1 -s ENVIRONMENT=worker \
-	--post-js $(POST_JS) --pre-js $(PRE_JS) -s TOTAL_STACK=4194304
+	--post-js $(POST_JS) --pre-js $(PRE_JS) -s TOTAL_STACK=4194304 -s ERROR_ON_UNDEFINED_SYMBOLS=0
 
 all: $(TARGET)
 
@@ -201,8 +200,8 @@ $(AVCODEC_BC): $(SHARED_DEPS) build/ffmpeg/config.h build/ffmpeg/libavcodec/libv
 build/%.o: build/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-$(POST_JS): build/avcodec.idl $(EMPATH)/tools/webidl_binder.py
-	python $(EMPATH)/tools/webidl_binder.py build/avcodec.idl build/avcodec.glue
+$(POST_JS): build/avcodec.idl ${EMSCRIPTEN}/tools/webidl_binder.py
+	python ${EMSCRIPTEN}/tools/webidl_binder.py build/avcodec.idl build/avcodec.glue
 	-@rm $(OBJS)
 
 $(TARGET): $(AVCODEC_BC) $(PRE_JS) $(POST_JS) $(OBJS) Makefile
@@ -210,7 +209,28 @@ $(TARGET): $(AVCODEC_BC) $(PRE_JS) $(POST_JS) $(OBJS) Makefile
 	@sed -i -E 's~var ensureCache~if(0)x~' $@
 	@sed -i -E 's~function _emscripten_memcpy_big[^{]+[^}]+}~~' $@
 	@sed -i -E 's~_emscripten_memcpy_big,~function(a,b,c)\{HEAPU8.copyWithin(a,b,b+c)\},~' $@
-	@uglifyjs -c pure_getters=true,reduce_vars=false,sequences=false,passes=2 -b indent_level=2,width=120 -o $@ $@
+	@$(UGLIFYJS) -o $@ $@
+	@sed -i -E 's~ENVIRONMENT_IS_\w+\s+\=[^,]+,~ ~g' $@
+	@sed -i -E 's~ENVIRONMENT_IS_WORKER~1~g' $@
+	@sed -i -E 's~ENVIRONMENT_IS_\w+~0~g' $@
+	@sed -i -E 's~Module.wasmBinary~//~g' $@
+	@sed -i -E 's~"object" != typeof WebAssembly~//~g' $@
+	@sed -i -E 's~if \\(wasmBinary~//~g' $@
+	@sed -i -E 's~var wasmBinary,~var ~' $@
+	@sed -i -E 's~wasmBinaryFile~WasmBinaryFile~g' $@
+	@sed -i -E 's~wasmBinary~0~g' $@
+	@sed -i -E 's~receiveInstantiatedSource, function~receiveInstantiatedSource,abort||0\&\&function~' $@
+	@sed -i -E 's~function isDataURI~if(0)x=function~g' $@
+	@sed -i -E 's~isDataURI\\([^\)]+\\)~0~g' $@
+	@sed -i -E 's~Module.instantiateWasm~0~g' $@
+	@sed -i -E 's~}, SYSCALLS~};var SYSCALLS~' $@
+	@sed -i -E 's~var PATH~if(0)x~' $@
+	@sed -i -E 's~"undefined" != typeof FS~0~g' $@
+	@sed -i -E 's~function getBinary\w*~if(0)x=function~' $@
+	@sed -i -E 's~var dataURIPrefix~//~g' $@
+	@sed -i -E 's~var stream = SYSCALLS.getStreamFromFD~//~g' $@
+	@sed -i -E 's~ = type;~=2;~g' $@
+	@$(UGLIFYJS) -o $@ $@
 
 install: $(TARGET)
 	cp $(TARGET:.js=.wasm) ../../webclient
