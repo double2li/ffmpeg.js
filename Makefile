@@ -39,6 +39,7 @@ LDFLAGS=$(LIBS) \
 	-s TOTAL_MEMORY=268435456 -s NO_FILESYSTEM=1 -s NO_DYNAMIC_EXECUTION=1 -s ABORTING_MALLOC=0 \
 	-s DISABLE_EXCEPTION_CATCHING=1 -s AGGRESSIVE_VARIABLE_ELIMINATION=1 -s ASSERTIONS=0 \
 	-s INVOKE_RUN=0 -s NO_EXIT_RUNTIME=1 -s TEXTDECODER=2 -s WASM=1 -s ENVIRONMENT=worker \
+	-s MINIMAL_RUNTIME=2 -s MINIMAL_RUNTIME_STREAMING_WASM_INSTANTIATION=1 \
 	--post-js $(POST_JS) --pre-js $(PRE_JS) -s TOTAL_STACK=4194304 -s ERROR_ON_UNDEFINED_SYMBOLS=0
 
 all: $(TARGET)
@@ -210,26 +211,22 @@ $(TARGET): $(AVCODEC_BC) $(PRE_JS) $(POST_JS) $(OBJS) Makefile
 	@sed -i -E 's~function _emscripten_memcpy_big[^{]+[^}]+}~~' $@
 	@sed -i -E 's~_emscripten_memcpy_big,~function(a,b,c)\{HEAPU8.copyWithin(a,b,b+c)\},~' $@
 	@$(UGLIFYJS) -o $@ $@
-	@sed -i -E 's~ENVIRONMENT_IS_\w+\s+\=[^,]+,~ ~g' $@
-	@sed -i -E 's~ENVIRONMENT_IS_WORKER~1~g' $@
-	@sed -i -E 's~ENVIRONMENT_IS_\w+~0~g' $@
-	@sed -i -E 's~Module.wasmBinary~//~g' $@
-	@sed -i -E 's~"object" != typeof WebAssembly~//~g' $@
-	@sed -i -E 's~if \\(wasmBinary~//~g' $@
-	@sed -i -E 's~var wasmBinary,~var ~' $@
-	@sed -i -E 's~wasmBinaryFile~WasmBinaryFile~g' $@
-	@sed -i -E 's~wasmBinary~0~g' $@
-	@sed -i -E 's~receiveInstantiatedSource, function~receiveInstantiatedSource,abort||0\&\&function~' $@
-	@sed -i -E 's~function isDataURI~if(0)x=function~g' $@
-	@sed -i -E 's~isDataURI\\([^\)]+\\)~0~g' $@
-	@sed -i -E 's~Module.instantiateWasm~0~g' $@
+	@sed -i -E 's~= Module;~={}~g' $@
+	@sed -i 's~"avcodec.wasm"~(self.location.protocol=="https:"?"/":"")+&~g' $@
+	@sed -i 's~WebAssembly.instantiateStreaming ?~1?~g' $@
+	@sed -i -E 's~throw what~throw new WebAssembly.RuntimeError(what)~g' $@
+	@sed -i -E 's~function _abort~if(0)x=function~g' $@
+	@sed -i -E 's~_abort~abort~g' $@
 	@sed -i -E 's~}, SYSCALLS~};var SYSCALLS~' $@
 	@sed -i -E 's~var PATH~if(0)x~' $@
 	@sed -i -E 's~"undefined" != typeof FS~0~g' $@
-	@sed -i -E 's~function getBinary\w*~if(0)x=function~' $@
-	@sed -i -E 's~var dataURIPrefix~//~g' $@
 	@sed -i -E 's~var stream = SYSCALLS.getStreamFromFD~//~g' $@
 	@sed -i -E 's~ = type;~=2;~g' $@
+	@sed -i -E 's~Module\.\w+\s=~ ~g' $@
+	@sed -i -E 's~dynCall_\w+,~ ~g' $@
+	@sed -i -E 's~dynCall_\w+\s=~//~g' $@
+	@sed -i 's~runtimeInitialized~//~' $@
+	@sed -i 's~console.error~console.debug~' $@
 	@$(UGLIFYJS) -o $@ $@
 
 install: $(TARGET)

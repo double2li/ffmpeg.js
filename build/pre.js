@@ -1,6 +1,5 @@
 var lib = null;
-
-Module.onRuntimeInitialized = setTimeout.bind(self, function() {
+var _main = setTimeout.bind(self, function() {
     var transcode = avcodec.prototype.transcode;
     var AVCodec = function AVCodec() {
         avcodec.call(this);
@@ -14,11 +13,11 @@ Module.onRuntimeInitialized = setTimeout.bind(self, function() {
             a0 = new Uint8Array(a0);
         }
 
-        var ptr = Module._malloc(a0.byteLength | 0);
+        var ptr = _malloc(a0.byteLength | 0);
         if (ptr) {
-            Module.HEAPU8.set(a0, ptr);
+            HEAPU8.set(a0, ptr);
             res = transcode.call(this, {ptr: ptr}, a1);
-            Module._free(ptr);
+            _free(ptr);
         }
 
         return res;
@@ -28,17 +27,16 @@ Module.onRuntimeInitialized = setTimeout.bind(self, function() {
         get: function() {
             var ptr = this.getBuffer();
             var len = this.getBufferLength();
-            return Module.HEAPU8.slice(ptr, ptr + len);
+            return HEAPU8.slice(ptr, ptr + len);
         }
     });
 
     lib = new AVCodec();
     var res = lib.init();
     if (res) {
-        throw new Error('Failed to initialize avcodec ('+res+')');
+        abort('Failed to initialize avcodec ('+res+')');
     }
     self.postMessage('ready');
-    Module.onRuntimeInitialized = Module.run = false;
 });
 
 self.onmessage = function (ev) {
@@ -47,7 +45,7 @@ self.onmessage = function (ev) {
     var res = lib.transcode(ev.data, ev.data.byteLength);
     console.timeEnd('transcode');
     if (res < 0) {
-        throw new Error('Trascoding failed ('+res+')');
+        abort('Trascoding failed ('+res+')');
     }
     var buffer = lib.buf.buffer;
     self.postMessage(buffer, [buffer]);
