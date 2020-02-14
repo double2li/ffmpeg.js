@@ -59,6 +59,15 @@ update:
 	@cd build/libvpx && git diff >../libvpx.patch && make clean && git reset --hard
 	@git submodule update --remote --merge
 
+touch-submodule:
+	@touch .git/modules/build/opus/FETCH_HEAD
+	@touch .git/modules/build/libvpx/FETCH_HEAD
+	@touch .git/modules/build/ffmpeg/FETCH_HEAD
+clean-update: clean update touch-submodule
+	@git fix
+	@git submodule foreach 'git fix || :'
+clean-install: clean-update install
+
 build/opus/configure:
 	cd build/opus && ./autogen.sh && patch -p1 < ../opus.patch
 
@@ -75,8 +84,6 @@ build/opus/Makefile: build/opus/configure .git/modules/build/opus/FETCH_HEAD
 		--disable-asm \
 		--disable-rtcd \
 		--disable-intrinsics
-	sed -i -E 's~python.*\\\\(\w+)~\\1~' build/opus/libtool
-	sed -i -E 's~python.*\\\\(\w+)~\\1~' build/opus/Makefile
 	@touch $@
 
 build/opus/dist/lib/libopus.so: build/opus/Makefile
@@ -112,9 +119,8 @@ build/libvpx/Makefile: .git/modules/build/libvpx/FETCH_HEAD
 	@touch $@
 
 build/libvpx/dist/lib/libvpx.so: build/libvpx/Makefile
-	sed -i -E 's~NM=.*~NM=llvm-nm~' build/libvpx/*.mk
-	sed -i -E 's~python.*\\\\(\w+)~\\1~' build/libvpx/*.mk
-	cd build/libvpx && emmake make -j8 && emmake make install && cp libvpx.so dist/lib
+	@sed -i 's~ln -sf~ln -f~' build/libvpx/libs.mk
+	cd build/libvpx && emmake make -j8 && emmake make install
 
 # TODO(Kagami): Emscripten documentation recommends to always use shared
 # libraries but it's not possible in case of ffmpeg because it has
