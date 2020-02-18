@@ -10,6 +10,19 @@ index 181e27b7c..21099049f 100755
 -const char *vpx_codec_build_config(void) {return cfg;}
 +const char *vpx_codec_build_config(void) {return "";}
  EOF
+diff --git a/libs.mk b/libs.mk
+index 569dbdc50..91d7d87ef 100644
+--- a/libs.mk
++++ b/libs.mk
+@@ -290,7 +290,7 @@ define libvpx_symlink_template
+ $(1): $(2)
+ 	@echo "    [LN]     $(2) $$@"
+ 	$(qexec)mkdir -p $$(dir $$@)
+-	$(qexec)ln -sf $(2) $$@
++	$(qexec)ln -f $(2) $$@
+ endef
+ 
+ $(eval $(call libvpx_symlink_template,\
 diff --git a/vp8/encoder/denoising.c b/vp8/encoder/denoising.c
 index e54d1e9f4..af0fc174e 100644
 --- a/vp8/encoder/denoising.c

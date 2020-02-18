@@ -701,10 +701,44 @@ index 0ea71386e5..733a2807ff 100644
 +#endif
  }
 diff --git a/libavutil/log.c b/libavutil/log.c
-index 8d4945249e..a1eb104ae8 100644
+index 8d4945249e..2407681bb5 100644
 --- a/libavutil/log.c
 +++ b/libavutil/log.c
-@@ -404,6 +404,7 @@ end:
+@@ -210,6 +210,9 @@ static void colored_fputs(int level, int tint, const char *str)
+     if (!*str)
+         return;
+ 
++#if defined(__EMSCRIPTEN__)
++    fputs(str, stderr);
++#else
+     if (use_color < 0)
+         check_color_terminal();
+ 
+@@ -229,6 +232,7 @@ static void colored_fputs(int level, int tint, const char *str)
+ #else
+     ansi_fputs(level, tint, str, local_use_color);
+ #endif
++#endif
+ 
+ }
+ 
+@@ -366,6 +370,7 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
+     format_line(ptr, level, fmt, vl, part, &print_prefix, type);
+     snprintf(line, sizeof(line), "%s%s%s%s", part[0].str, part[1].str, part[2].str, part[3].str);
+ 
++#if !defined(__EMSCRIPTEN__)
+ #if HAVE_ISATTY
+     if (!is_atty)
+         is_atty = isatty(2) ? 1 : -1;
+@@ -383,6 +388,7 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
+         count = 0;
+     }
+     strcpy(prev, line);
++#endif // !defined(__EMSCRIPTEN__)
+     sanitize(part[0].str);
+     colored_fputs(type[0], 0, part[0].str);
+     sanitize(part[1].str);
+@@ -404,6 +410,7 @@ end:
  static void (*av_log_callback)(void*, int, const char*, va_list) =
      av_log_default_callback;
  
@@ -712,7 +746,7 @@ index 8d4945249e..a1eb104ae8 100644
  void av_log(void* avcl, int level, const char *fmt, ...)
  {
      va_list vl;
-@@ -431,6 +432,7 @@ void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
+@@ -431,6 +438,7 @@ void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
      if (log_callback)
          log_callback(avcl, level, fmt, vl);
  }

@@ -20,13 +20,12 @@ SHARED_DEPS = \
 
 CC=emcc
 CXX=em++
-UGLIFYJS=uglifyjs -c pure_getters=true,reduce_vars=false,sequences=false,passes=5 -b indent_level=2,width=120
 INCLUDES=-I build/ffmpeg
 DEFINES=-DUNICODE -DNDEBUG #-DNO_AVLOG
 CFLAGS=$(DEFINES) -O3 --llvm-lto 3 -flto -ffast-math -funroll-loops \
 	-finline-functions -fno-threadsafe-statics -fno-debug-macro -fomit-frame-pointer
 SIMDFLAGS=#-s SIMD=1 -fno-vectorize #-msimd128
-CXXFLAGS=-std=c++11 -fno-exceptions -fno-rtti $(CFLAGS)
+CXXFLAGS=-std=c++17 -fno-exceptions -fno-rtti $(CFLAGS)
 OBJS=build/glue.wrapper.o
 LIBS=\
 	build/ffmpeg/libavformat/libavformat.a \
@@ -119,7 +118,6 @@ build/libvpx/Makefile: .git/modules/build/libvpx/FETCH_HEAD
 	@touch $@
 
 build/libvpx/dist/lib/libvpx.so: build/libvpx/Makefile
-	@sed -i 's~ln -sf~ln -f~' build/libvpx/libs.mk
 	cd build/libvpx && emmake make -j8 && emmake make install
 
 # TODO(Kagami): Emscripten documentation recommends to always use shared
@@ -186,6 +184,7 @@ FFMPEG_ARGS = \
 	--disable-securetransport \
 	--disable-xlib \
 	--disable-zlib
+FFMPEG_CFLAGS=$(CFLAGS) -I../libvpx/dist/include -I../opus/dist/include -I../opus/dist/include/opus
 
 build/ffmpeg/config.h: .git/modules/build/ffmpeg/FETCH_HEAD
 	cd build/ffmpeg && \
@@ -197,7 +196,8 @@ build/ffmpeg/config.h: .git/modules/build/ffmpeg/FETCH_HEAD
 		$(addprefix --enable-muxer=,$(MUXERS)) \
 		--enable-libopus \
 		--enable-libvpx \
-		--extra-cflags="$(CFLAGS) -I../libvpx/dist/include -I../opus/dist/include -I../opus/dist/include/opus" \
+		--extra-cflags="$(FFMPEG_CFLAGS)" \
+		--extra-cxxflags="$(CXXFLAGS) $(FFMPEG_CFLAGS)" \
 		--extra-ldflags="$(CFLAGS) -L../libvpx/dist/lib -lvpx -L../opus/dist/lib -lopus"
 	@touch $@
 
@@ -212,28 +212,22 @@ $(POST_JS): build/avcodec.idl ${EMSCRIPTEN}/tools/webidl_binder.py
 	-@rm $(OBJS)
 
 $(TARGET): $(AVCODEC_BC) $(PRE_JS) $(POST_JS) $(OBJS) Makefile
-	$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $@
-	@sed -i -E 's~var ensureCache~if(0)x~' $@
-	@sed -i -E 's~function _emscripten_memcpy_big[^{]+[^}]+}~~' $@
-	@sed -i -E 's~_emscripten_memcpy_big,~function(a,b,c)\{HEAPU8.copyWithin(a,b,b+c)\},~' $@
-	@$(UGLIFYJS) -o $@ $@
-	@sed -i -E 's~= Module;~={}~g' $@
-	@sed -i 's~"avcodec.wasm"~(self.location.protocol=="https:"?"/":"")+&~g' $@
-	@sed -i 's~WebAssembly.instantiateStreaming ?~1?~g' $@
-	@sed -i -E 's~throw what~throw new WebAssembly.RuntimeError(what)~g' $@
-	@sed -i -E 's~function _abort~if(0)x=function~g' $@
-	@sed -i -E 's~_abort~abort~g' $@
-	@sed -i -E 's~}, SYSCALLS~};var SYSCALLS~' $@
-	@sed -i -E 's~var PATH~if(0)x~' $@
-	@sed -i -E 's~"undefined" != typeof FS~0~g' $@
-	@sed -i -E 's~var stream = SYSCALLS.getStreamFromFD~//~g' $@
-	@sed -i -E 's~ = type;~=2;~g' $@
-	@sed -i -E 's~Module\.\w+\s=~ ~g' $@
-	@sed -i -E 's~dynCall_\w+,~ ~g' $@
-	@sed -i -E 's~dynCall_\w+\s=~//~g' $@
-	@sed -i 's~runtimeInitialized~//~' $@
+	# $(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $@
+	# cp $@ $@.orig
+	cp $@.orig $@
+	@sed -i 's~_abort,~abort,~' $@
+	@sed -i 's~ready()}~_main()}~' $@
+	@sed -i -E 's~Module\["\w+"\]=~ ~g' $@
+	@sed -i 's~typeof FS==="undefined"~1~g' $@
+	@sed -i 's~_emscripten_bind_avcodec~~g' $@
 	@sed -i 's~console.error~console.debug~' $@
-	@$(UGLIFYJS) -o $@ $@
+	@sed -i 's~WebAssembly.instantiateStreaming?~1?~' $@
+	@sed -i -E 's~new (Int(8|16)|Uint(16|32)|Float)~0\&\&&~g' $@
+	@sed -i 's~throw what~throw new WebAssembly.RuntimeError(what)~g' $@
+	@sed -i 's~"avcodec.wasm"~(self.location.protocol=="https:"?"/":"")+&~' $@
+	@sed -i 's~for(var j=0;j<len;j++){SYSCALLS.printChar~dump(fd,ptr,len);if(0){foo~' $@
+	@sed -i 's~_emscripten_memcpy_big,~function(a,b,c)\{HEAPU8.copyWithin(a,b,b+c)\},~' $@
+	@uglifyjs -c 'pure_getters=true,keep_fnames=true,sequences=false,passes=4' -b indent_level=2,width=120 --toplevel -o $@ $@
 
 install: $(TARGET)
 	cp $(TARGET:.js=.wasm) ../../webclient

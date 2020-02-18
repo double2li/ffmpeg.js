@@ -39,6 +39,19 @@ var _main = setTimeout.bind(self, function() {
     self.postMessage('ready');
 });
 
+var db = [ null, '', '' ];
+function dump(fd, ptr, len) {
+    db[fd] += String.fromCharCode.apply(null, HEAPU8.subarray(ptr, ptr + len));
+
+    if (db[fd].indexOf('\n') >= 0) {
+        var s = db[fd].split('\n');
+        for (var i = 0; i < s.length - 1; i++) {
+            (fd == 1 ? out : err)(s[i]);
+        }
+        db[fd] = s[s.length -1];
+    }
+}
+
 self.onmessage = function (ev) {
     console.info(ev);
     console.time('transcode');
@@ -49,4 +62,5 @@ self.onmessage = function (ev) {
     }
     var buffer = lib.buf.buffer;
     self.postMessage(buffer, [buffer]);
+    dump;
 };
