@@ -22,7 +22,7 @@ CC=emcc
 CXX=em++
 INCLUDES=-I build/ffmpeg
 DEFINES=-DUNICODE -DNDEBUG #-DNO_AVLOG
-CFLAGS=$(DEFINES) -O3 --llvm-lto 3 -flto -ffast-math -funroll-loops \
+CFLAGS=$(DEFINES) -O3 --llvm-lto 3 -flto -ffast-math -funroll-loops -fignore-exceptions \
 	-finline-functions -fno-threadsafe-statics -fno-debug-macro -fomit-frame-pointer
 SIMDFLAGS=#-s SIMD=1 -fno-vectorize #-msimd128
 CXXFLAGS=-std=c++17 -fno-exceptions -fno-rtti $(CFLAGS)
@@ -35,11 +35,11 @@ LIBS=\
 	build/ffmpeg/libavutil/libavutil.a \
 	$(SHARED_DEPS)
 LDFLAGS=$(LIBS) \
-	-s TOTAL_MEMORY=268435456 -s NO_FILESYSTEM=1 -s NO_DYNAMIC_EXECUTION=1 -s ABORTING_MALLOC=0 \
-	-s DISABLE_EXCEPTION_CATCHING=1 -s AGGRESSIVE_VARIABLE_ELIMINATION=1 -s ASSERTIONS=0 \
-	-s INVOKE_RUN=0 -s NO_EXIT_RUNTIME=1 -s TEXTDECODER=2 -s WASM=1 -s ENVIRONMENT=worker \
-	-s MINIMAL_RUNTIME=2 -s MINIMAL_RUNTIME_STREAMING_WASM_INSTANTIATION=1 \
-	--post-js $(POST_JS) --pre-js $(PRE_JS) -s TOTAL_STACK=4194304 -s ERROR_ON_UNDEFINED_SYMBOLS=0
+	-s INITIAL_MEMORY=256MB -s TOTAL_STACK=4MB -s WASM=1 -s FILESYSTEM=0 -s INVOKE_RUN=0 \
+	-s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s TEXTDECODER=2 -s ABORTING_MALLOC=0 \
+	-s EXIT_RUNTIME=0 -s MINIMAL_RUNTIME=2 -s MINIMAL_RUNTIME_STREAMING_WASM_INSTANTIATION=1 \
+	-s DYNAMIC_EXECUTION=0 -s ENVIRONMENT=worker \
+	--post-js $(POST_JS) --pre-js $(PRE_JS)
 
 all: $(TARGET)
 
@@ -74,6 +74,7 @@ build/opus/Makefile: build/opus/configure .git/modules/build/opus/FETCH_HEAD
 	cd build/opus && \
 	emconfigure ./configure \
 		CC="emcc $(CFLAGS) $(SIMDFLAGS)" \
+		CFLAGS=" -Wall " \
 		--prefix="$$(pwd)/dist" \
 		--host=x86-none-linux \
 		--disable-static \
@@ -212,9 +213,9 @@ $(POST_JS): build/avcodec.idl ${EMSCRIPTEN}/tools/webidl_binder.py
 	-@rm $(OBJS)
 
 $(TARGET): $(AVCODEC_BC) $(PRE_JS) $(POST_JS) $(OBJS) Makefile
-	# $(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $@
-	# cp $@ $@.orig
-	cp $@.orig $@
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $@
+	cp $@ $@.orig
+	# cp $@.orig $@
 	@sed -i 's~_abort,~abort,~' $@
 	@sed -i 's~ready()}~_main()}~' $@
 	@sed -i -E 's~Module\["\w+"\]=~ ~g' $@

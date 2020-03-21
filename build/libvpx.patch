@@ -1,8 +1,8 @@
 diff --git a/configure b/configure
-index 181e27b7c..21099049f 100755
+index f470cbe85..084a7564b 100755
 --- a/configure
 +++ b/configure
-@@ -781,6 +781,5 @@ process "$@"
+@@ -782,6 +782,5 @@ process "$@"
  print_webm_license ${BUILD_PFX}vpx_config.c "/*" " */"
  cat <<EOF >> ${BUILD_PFX}vpx_config.c
  #include "vpx/vpx_codec.h"
@@ -313,7 +313,7 @@ index 10331aa21..347d87e43 100644
 +#endif
  }
 diff --git a/vpx/src/vpx_encoder.c b/vpx/src/vpx_encoder.c
-index 6272502ce..f885c6b8d 100644
+index f636b54a3..ad1da0fa0 100644
 --- a/vpx/src/vpx_encoder.c
 +++ b/vpx/src/vpx_encoder.c
 @@ -22,7 +22,7 @@
@@ -325,7 +325,7 @@ index 6272502ce..f885c6b8d 100644
    return (vpx_codec_alg_priv_t *)ctx->priv;
  }
  
-@@ -244,6 +244,9 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
+@@ -237,6 +237,9 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
  
  const vpx_codec_cx_pkt_t *vpx_codec_get_cx_data(vpx_codec_ctx_t *ctx,
                                                  vpx_codec_iter_t *iter) {
@@ -335,7 +335,7 @@ index 6272502ce..f885c6b8d 100644
    const vpx_codec_cx_pkt_t *pkt = NULL;
  
    if (ctx) {
-@@ -286,6 +289,7 @@ const vpx_codec_cx_pkt_t *vpx_codec_get_cx_data(vpx_codec_ctx_t *ctx,
+@@ -279,6 +282,7 @@ const vpx_codec_cx_pkt_t *vpx_codec_get_cx_data(vpx_codec_ctx_t *ctx,
    }
  
    return pkt;

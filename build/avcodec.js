@@ -60,56 +60,35 @@ function abort(what) {
 var UTF8Decoder = new TextDecoder("utf8"), wasmMemory = new WebAssembly.Memory({
   initial: 4096,
   maximum: 4096
-}), wasmTable = new WebAssembly.Table({
-  initial: 2304,
-  maximum: 2304,
+}), buffer = wasmMemory.buffer, wasmTable = new WebAssembly.Table({
+  initial: 2306,
+  maximum: 2306,
   element: "anyfunc"
-}), buffer = wasmMemory.buffer, HEAP32 = new Int32Array(buffer), HEAPU8 = new Uint8Array(buffer);
+}), HEAP32 = new Int32Array(buffer), HEAPU8 = new Uint8Array(buffer);
 
-HEAP32[856864] = 7621920;
+HEAP32[856736] = 7621408;
 
 var _avcodec_0, _init_0, _transcode_2, _getBuffer_0, _getBufferLength_0, _status_0, _kill_0, ___destroy___0, _emscripten_bind_VoidPtr___destroy___0, _malloc, _free, Math_ceil = Math.ceil, Math_floor = Math.floor, imports = {
   a: {
-    b: function ___powisf2() {
-      err("missing function: __powisf2");
-      abort(-1);
-    },
-    a: abort,
+    b: abort,
     h: function(a, b, c) {
       HEAPU8.copyWithin(a, b, b + c);
     },
-    i: function _emscripten_resize_heap() {
+    a: function _emscripten_resize_heap() {
       return !1;
     },
-    j: function _fd_close() {
-      try {
-        return 0;
-      } catch (e) {
-        abort(e);
-        return e.errno;
-      }
+    i: function _fd_close() {
+      return 0;
     },
-    e: function _fd_seek() {
-      try {
-        return 0;
-      } catch (e) {
-        abort(e);
-        return e.errno;
-      }
-    },
+    e: function _fd_seek() {},
     c: function _fd_write(fd, iov, iovcnt, pnum) {
-      try {
-        for (var num = 0, i = 0; i < iovcnt; i++) {
-          var len = HEAP32[iov + (8 * i + 4) >> 2];
-          dump(fd, HEAP32[iov + 8 * i >> 2], len);
-          num += len;
-        }
-        HEAP32[pnum >> 2] = num;
-        return 0;
-      } catch (e) {
-        abort(e);
-        return e.errno;
+      for (var num = 0, i = 0; i < iovcnt; i++) {
+        var len = HEAP32[iov + (8 * i + 4) >> 2];
+        dump(fd, HEAP32[iov + 8 * i >> 2], len);
+        num += len;
       }
+      HEAP32[pnum >> 2] = num;
+      return 0;
     },
     memory: wasmMemory,
     g: function _round(d) {
@@ -126,20 +105,20 @@ var _avcodec_0, _init_0, _transcode_2, _getBuffer_0, _getBufferLength_0, _status
 };
 
 WebAssembly.instantiateStreaming(fetch(("https:" == self.location.protocol ? "/" : "") + "avcodec.wasm"), imports).then(function(output) {
-  var asm = output.instance ? output.instance.exports : output.exports;
-  _avcodec_0 = asm.l;
-  _init_0 = asm.m;
-  _transcode_2 = asm.n;
-  _getBuffer_0 = asm.o;
-  _getBufferLength_0 = asm.p;
-  _status_0 = asm.q;
-  _kill_0 = asm.r;
-  ___destroy___0 = asm.s;
-  _emscripten_bind_VoidPtr___destroy___0 = asm.t;
-  _malloc = asm.u;
-  _free = asm.v;
+  var asm = (output.instance || output).exports;
+  _avcodec_0 = asm.k;
+  _init_0 = asm.l;
+  _transcode_2 = asm.m;
+  _getBuffer_0 = asm.n;
+  _getBufferLength_0 = asm.o;
+  _status_0 = asm.p;
+  _kill_0 = asm.q;
+  ___destroy___0 = asm.r;
+  _emscripten_bind_VoidPtr___destroy___0 = asm.s;
+  _malloc = asm.t;
+  _free = asm.u;
   !function initRuntime(asm) {
-    asm.k();
+    asm.j();
   }(asm);
   _main();
 });
