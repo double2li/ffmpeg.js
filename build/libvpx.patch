@@ -1,8 +1,8 @@
 diff --git a/configure b/configure
-index f470cbe85..084a7564b 100755
+index 41c3c6fca..5e939281e 100755
 --- a/configure
 +++ b/configure
-@@ -782,6 +782,5 @@ process "$@"
+@@ -783,6 +783,5 @@ process "$@"
  print_webm_license ${BUILD_PFX}vpx_config.c "/*" " */"
  cat <<EOF >> ${BUILD_PFX}vpx_config.c
  #include "vpx/vpx_codec.h"
@@ -11,7 +11,7 @@ index f470cbe85..084a7564b 100755
 +const char *vpx_codec_build_config(void) {return "";}
  EOF
 diff --git a/libs.mk b/libs.mk
-index 569dbdc50..91d7d87ef 100644
+index ffb8dee48..f1849c27a 100644
 --- a/libs.mk
 +++ b/libs.mk
 @@ -290,7 +290,7 @@ define libvpx_symlink_template
@@ -86,7 +86,7 @@ index 2b3d9564c..a1cc19833 100644
  
    // Work out the segment probabilities if segmentation is enabled
 diff --git a/vp8/encoder/onyx_if.c b/vp8/encoder/onyx_if.c
-index 29c8cc66c..3754ee5bf 100644
+index 3f5b9816d..c49a63898 100644
 --- a/vp8/encoder/onyx_if.c
 +++ b/vp8/encoder/onyx_if.c
 @@ -3141,11 +3141,13 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
@@ -278,10 +278,10 @@ index 8f7617abf..326b5d757 100644
          VPX_SS_DEFAULT_LAYERS, /* ss_number_layers */
          { 0 },
 diff --git a/vpx/internal/vpx_codec_internal.h b/vpx/internal/vpx_codec_internal.h
-index 9eed85e5d..ed19ef38d 100644
+index 5135d3422..51f730f86 100644
 --- a/vpx/internal/vpx_codec_internal.h
 +++ b/vpx/internal/vpx_codec_internal.h
-@@ -441,5 +441,8 @@ void vpx_internal_error(struct vpx_internal_error_info *info,
+@@ -440,5 +440,8 @@ void vpx_internal_error(struct vpx_internal_error_info *info,
  #ifdef __cplusplus
  }  // extern "C"
  #endif

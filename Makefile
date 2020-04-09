@@ -88,6 +88,7 @@ build/opus/Makefile: build/opus/configure .git/modules/build/opus/FETCH_HEAD
 
 build/opus/dist/lib/libopus.so: build/opus/Makefile
 	cd build/opus && \
+	make mostlyclean-compile >/dev/null && \
 	emmake make -j8 && \
 	emmake make install
 
