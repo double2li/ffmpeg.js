@@ -61,12 +61,12 @@ var UTF8Decoder = new TextDecoder("utf8"), wasmMemory = new WebAssembly.Memory({
   initial: 4096,
   maximum: 4096
 }), buffer = wasmMemory.buffer, wasmTable = new WebAssembly.Table({
-  initial: 2307,
-  maximum: 2307,
+  initial: 2308,
+  maximum: 2308,
   element: "anyfunc"
 }), HEAP32 = new Int32Array(buffer), HEAPU8 = new Uint8Array(buffer);
 
-HEAP32[856800] = 7621664;
+HEAP32[856520] = 7620544;
 
 var _avcodec_0, _init_0, _transcode_2, _getBuffer_0, _getBufferLength_0, _status_0, _kill_0, ___destroy___0, _emscripten_bind_VoidPtr___destroy___0, _malloc, _free, Math_ceil = Math.ceil, Math_floor = Math.floor, imports = {
   a: {
@@ -115,8 +115,8 @@ WebAssembly.instantiateStreaming(fetch(("https:" == self.location.protocol ? "/"
   _kill_0 = asm.q;
   ___destroy___0 = asm.r;
   _emscripten_bind_VoidPtr___destroy___0 = asm.s;
-  _malloc = asm.t;
-  _free = asm.u;
+  _malloc = asm.u;
+  _free = asm.v;
   !function initRuntime(asm) {
     asm.j();
   }(asm);

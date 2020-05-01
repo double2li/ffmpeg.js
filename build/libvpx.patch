@@ -1,3 +1,37 @@
+diff --git a/build/make/Makefile b/build/make/Makefile
+index be2810229..a2afd6d3d 100644
+--- a/build/make/Makefile
++++ b/build/make/Makefile
+@@ -303,8 +303,7 @@ define so_template
+ $(1):
+ 	$(if $(quiet),@echo "    [LD] $$@")
+ 	$(qexec)$$(LD) -shared $$(LDFLAGS) \
+-            -Wl,--no-undefined -Wl,-soname,$$(SONAME) \
+-            -Wl,--version-script,$$(EXPORTS_FILE) -o $$@ \
++            -o $$@ \
+             $$(filter %.o,$$^) $$(extralibs)
+ endef
+ 
+diff --git a/build/make/configure.sh b/build/make/configure.sh
+index 206b54f77..3c5fefed5 100644
+--- a/build/make/configure.sh
++++ b/build/make/configure.sh
+@@ -363,12 +363,12 @@ EOF
+ }
+ 
+ check_add_cflags() {
+-  check_cxxflags "$@" && add_cxxflags_only "$@"
+-  check_cflags "$@" && add_cflags_only "$@"
++  add_cxxflags_only "$@"
++  add_cflags_only "$@"
+ }
+ 
+ check_add_cxxflags() {
+-  check_cxxflags "$@" && add_cxxflags_only "$@"
++  add_cxxflags_only "$@"
+ }
+ 
+ check_add_asflags() {
 diff --git a/configure b/configure
 index 41c3c6fca..5e939281e 100755
 --- a/configure
@@ -278,10 +312,10 @@ index 8f7617abf..326b5d757 100644
          VPX_SS_DEFAULT_LAYERS, /* ss_number_layers */
          { 0 },
 diff --git a/vpx/internal/vpx_codec_internal.h b/vpx/internal/vpx_codec_internal.h
-index 5135d3422..51f730f86 100644
+index 4ef93057f..18884fe48 100644
 --- a/vpx/internal/vpx_codec_internal.h
 +++ b/vpx/internal/vpx_codec_internal.h
-@@ -440,5 +440,8 @@ void vpx_internal_error(struct vpx_internal_error_info *info,
+@@ -442,5 +442,8 @@ void vpx_internal_error(struct vpx_internal_error_info *info,
  #ifdef __cplusplus
  }  // extern "C"
  #endif

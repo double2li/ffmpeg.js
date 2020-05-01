@@ -22,7 +22,7 @@ CC=emcc
 CXX=em++
 INCLUDES=-I build/ffmpeg
 DEFINES=-DUNICODE -DNDEBUG #-DNO_AVLOG
-CFLAGS=$(DEFINES) -O3 --llvm-lto 3 -flto -ffast-math -funroll-loops -fignore-exceptions \
+CFLAGS=$(DEFINES) -O3 -flto -ffast-math -funroll-loops -fignore-exceptions \
 	-finline-functions -fno-threadsafe-statics -fno-debug-macro -fomit-frame-pointer
 SIMDFLAGS=#-s SIMD=1 -fno-vectorize #-msimd128
 CXXFLAGS=-std=c++17 -fno-exceptions -fno-rtti $(CFLAGS)
